@@ -1,15 +1,20 @@
 import React from 'react';
 import { ThoughtBadge } from './ThoughtBadge';
 import { DraftTicketCard } from './DraftTicketCard';
-import { TicketDraft } from '../../types/chat';
+import { TicketSelectionCard } from './TicketSelectionCard';
+import { TicketDetailCard } from './TicketDetailCard';
+import { TicketDraft, TicketItem } from '@/types/chat';
 
 interface AgentMessageProps {
   actionsDone?: string[];
   content: string;
   quickOptions?: string[];
   draftCard?: TicketDraft;
+  ticketList?: TicketItem[];
+  ticketDetailCard?: TicketItem;
   onSelectOption?: (option: string) => void;
   onConfirmDraft?: () => void;
+  onSelectTicket?: (ticket: TicketItem) => void;
 }
 
 export const AgentMessage: React.FC<AgentMessageProps> = ({
@@ -17,19 +22,41 @@ export const AgentMessage: React.FC<AgentMessageProps> = ({
   content,
   quickOptions = [],
   draftCard,
+  ticketList,
+  ticketDetailCard,
   onSelectOption,
   onConfirmDraft,
+  onSelectTicket,
 }) => {
   return (
     <div className="mb-6 max-w-2xl">
-      {/* Badge com Ações/Decisões executadas */}
       <ThoughtBadge actions={actionsDone} />
 
-      {/* Caixa de Texto do Agent */}
       <div className="bg-white border border-slate-200 text-slate-800 text-sm rounded-lg p-4 shadow-sm">
         <p className="whitespace-pre-line leading-relaxed">{content}</p>
 
-        {/* Opções Rápidas (Botões Rápidos) */}
+        {/* Lista de Chamados Selecionáveis */}
+        {ticketList && ticketList.length > 0 && (
+          <TicketSelectionCard
+            tickets={ticketList}
+            onSelectTicket={(ticket) => onSelectTicket && onSelectTicket(ticket)}
+          />
+        )}
+
+        {/* Detalhe do Chamado */}
+        {ticketDetailCard && <TicketDetailCard ticket={ticketDetailCard} />}
+
+        {/* Rascunho */}
+        {draftCard && (
+          <DraftTicketCard
+            draft={draftCard}
+            onConfirm={() => onConfirmDraft && onConfirmDraft()}
+            onEdit={() => console.log('Editar rascunho')}
+            onCancel={() => console.log('Cancelar rascunho')}
+          />
+        )}
+
+        {/* Quick Options */}
         {quickOptions.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
             {quickOptions.map((opt, idx) => (
@@ -42,16 +69,6 @@ export const AgentMessage: React.FC<AgentMessageProps> = ({
               </button>
             ))}
           </div>
-        )}
-
-        {/* Exibição do Rascunho se presente */}
-        {draftCard && (
-          <DraftTicketCard
-            draft={draftCard}
-            onConfirm={() => onConfirmDraft && onConfirmDraft()}
-            onEdit={() => console.log('Editar rascunho')}
-            onCancel={() => console.log('Cancelar rascunho')}
-          />
         )}
       </div>
     </div>

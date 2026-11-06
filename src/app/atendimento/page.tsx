@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sidebar } from '../../components/chat/Sidebar';
-import { Header } from '../../components/chat/Header';
-import { UserMessage } from '../../components/chat/UserMessage';
-import { AgentMessage } from '../../components/chat/AgentMessage';
-import { ChatInput } from '../../components/chat/ChatInput';
-import { Message, UserProfile } from '../../types/chat';
+import { Sidebar } from '@/components/chat/Sidebar';
+import { Header } from '@/components/chat/Header';
+import { UserMessage } from '@/components/chat/UserMessage';
+import { AgentMessage } from '@/components/chat/AgentMessage';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { Message, UserProfile, TicketItem } from '@/types/chat';
 
 export default function AtendimentoPage() {
   const currentUser: UserProfile = {
@@ -15,48 +15,73 @@ export default function AtendimentoPage() {
     avatarInitials: 'AS',
   };
 
-  // Mock inicial das mensagens conforme a imagem da Tela 2
+  // Mock dos chamados abertos da Ana Souza (Anexo B)
+  const userTicketsMock: TicketItem[] = [
+    {
+      id: 'INC-20311',
+      title: 'Notebook lento após atualização',
+      status: 'Aguardando analista',
+      date: '16 out',
+      description: 'Lentidão geral desde a atualização de 15/10. Reiniciar e rodar o diagnóstico da central não resolveu.',
+      category: 'Hardware › Notebook',
+      priority: 'Média',
+      openedAt: '16 out, 14:20',
+      lastUpdate: 'há 5 dias',
+      isOverdue: true,
+    },
+    {
+      id: 'INC-20298',
+      title: 'Acesso à pasta Financeiro no SharePoint',
+      status: 'Em andamento',
+      date: '14 out',
+    },
+    {
+      id: 'REQ-10442',
+      title: 'Segundo monitor para home office',
+      status: 'Aprovado',
+      date: '09 out',
+    },
+  ];
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       sender: 'user',
-      content: 'Meu notebook não conecta na VPN desde ontem. Aparece o erro 809.',
+      content: 'Qual o status do meu chamado?',
       timestamp: '14:00',
     },
     {
       id: '2',
       sender: 'agent',
-      actionsDone: ['consultou seus chamados', 'buscou na central de ajuda'],
-      content:
-        'Não há chamado aberto sobre VPN, e o artigo do erro 809 vale só para Windows 10 — o seu é Windows 11. Vou abrir um chamado.\n\nQuem está sendo afetado?',
-      quickOptions: ['Só eu', 'Minha equipe', 'Toda a empresa', 'Não sei'],
+      actionsDone: ['consultou seus chamados'],
+      content: 'Você tem 3 chamados abertos. Sobre qual deles quer saber?',
+      ticketList: userTicketsMock,
       timestamp: '14:01',
     },
-    {
-      id: '3',
-      sender: 'user',
-      content: 'Só eu. Tenho reunião com um cliente às 14h e preciso da VPN funcionando.',
-      timestamp: '14:02',
-    },
-    {
-      id: '4',
-      sender: 'agent',
-      actionsDone: ['classificou a prioridade', 'consultou o SLA', 'montou o rascunho'],
-      content:
-        'Coloquei prioridade alta por causa da reunião — a resposta chega antes das 14h.\nConfira antes de eu criar:',
-      draftCard: {
-        id: 'D-381',
-        title: 'VPN não conecta no notebook — erro 809',
-        description:
-          'Desde 20/10 o notebook (Windows 11) não conecta na VPN e mostra o erro 809. Precisa dela para a reunião das 14h.',
-        category: 'Rede e VPN',
-        priority: 'Alta',
-        slaTime: 'resposta até 13:43',
-        affected: 'Somente você',
-      },
-      timestamp: '14:03',
-    },
   ]);
+
+  const handleSelectTicket = (ticket: TicketItem) => {
+    // Adiciona o envio do usuário referente ao chamado escolhido
+    const userSelectMsg: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      content: `${ticket.id} · ${ticket.title}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    // Resposta do Agent com detalhes e opções de ação
+    const agentResponseMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      sender: 'agent',
+      actionsDone: [`consultou o ${ticket.id}`, 'calculou o prazo'],
+      content: 'Está sem atualização há 5 dias, acima do prazo de 3 dias úteis para prioridade média. Quer que eu chame um analista?',
+      ticketDetailCard: ticket,
+      quickOptions: ['Falar com um analista', 'Adicionar informação', 'Não, obrigado'],
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userSelectMsg, agentResponseMsg]);
+  };
 
   const handleSendMessage = (text: string) => {
     const newMessage: Message = {
@@ -66,20 +91,15 @@ export default function AtendimentoPage() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     setMessages((prev) => [...prev, newMessage]);
-    
-    // Aqui você faria a chamada para a API do Agent Backend
   };
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans antialiased overflow-hidden">
-      {/* Sidebar Fixa à Esquerda */}
       <Sidebar user={currentUser} />
 
-      {/* Conteúdo Principal */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <Header isAgentOnline={true} />
 
-        {/* Área de Rolagem do Chat */}
         <main className="flex-1 overflow-y-auto p-6 bg-slate-100/60">
           <div className="max-w-4xl mx-auto">
             {messages.map((msg) =>
@@ -92,15 +112,16 @@ export default function AtendimentoPage() {
                   content={msg.content}
                   quickOptions={msg.quickOptions}
                   draftCard={msg.draftCard}
+                  ticketList={msg.ticketList}
+                  ticketDetailCard={msg.ticketDetailCard}
                   onSelectOption={(opt) => handleSendMessage(opt)}
-                  onConfirmDraft={() => alert('Chamado confirmado e criado no banco de dados!')}
+                  onSelectTicket={handleSelectTicket}
                 />
               )
             )}
           </div>
         </main>
 
-        {/* Rodapé e Input */}
         <ChatInput
           onSendMessage={handleSendMessage}
           messageCount={messages.length}
