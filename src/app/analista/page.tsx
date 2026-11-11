@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { ConversationsSidebar } from '@/components/analyst/ConversationSidebar';
 import { AnalystRightPanel } from '@/components/analyst/AnalystRightPanel';
-import { Search, HeadsetIcon, ShieldAlert } from 'lucide-react';
+import { Send, ArrowLeftRight, XCircle } from 'lucide-react';
 import { AnalystConversation } from '@/types/analyst';
 
 export default function AnalistaPage() {
@@ -14,11 +14,10 @@ export default function AnalistaPage() {
       clientEmail: 'ana.souza@nexo.com.br',
       department: 'Financeiro',
       currentTicketId: 'INC-20311',
-      lastMessage: 'Está parado há 5 dias. Quero falar com...',
+      lastMessage: 'Posso sim, está ligado.',
       time: '10:05',
-      status: 'aguardando',
-      badgeText: 'Transferida · INC-20311',
-      unreadCount: 2,
+      status: 'em_atendimento',
+      badgeText: 'Você está atendendo',
     },
     {
       id: '2',
@@ -32,21 +31,18 @@ export default function AnalistaPage() {
       badgeText: 'Transferida · contato em 25 min',
       unreadCount: 1,
     },
-    {
-      id: '3',
-      clientName: 'Bruno Tavares',
-      clientEmail: 'bruno.tavares@nexo.com.br',
-      department: 'TI',
-      currentTicketId: 'INC-20412',
-      lastMessage: 'Nexo: Vou chamar um analista para isso.',
-      time: '09:51',
-      status: 'com_agent',
-    },
   ];
 
   const [selectedId, setSelectedId] = useState<string>('1');
   const activeConversation = mockConversations.find(c => c.id === selectedId) || mockConversations[0];
-  const [isAgentPaused, setIsAgentPaused] = useState<boolean>(true);
+  const [analystMessage, setAnalystMessage] = useState<string>('');
+
+  const handleSendAnalystMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!analystMessage.trim()) return;
+    alert(`Mensagem enviada pelo analista: "${analystMessage}"`);
+    setAnalystMessage('');
+  };
 
   return (
     <div className="flex h-screen bg-slate-100 font-sans antialiased overflow-hidden">
@@ -57,9 +53,9 @@ export default function AnalistaPage() {
         onSelectConversation={setSelectedId}
       />
 
-      {/* 2. Área Central de Chat com o Analista */}
+      {/* 2. Área Central de Chat - Atendimento Assumido */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-white">
-        {/* Top Header da Conversa */}
+        {/* Top Header com Botões de Ação do Analista */}
         <div className="h-14 border-b border-slate-200 px-6 flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
@@ -68,28 +64,30 @@ export default function AnalistaPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-slate-900 text-sm">{activeConversation.clientName}</h3>
-                <span className="text-[11px] bg-amber-50 text-amber-700 font-medium px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                  Aguardando atendente
-                </span>
+                <span className="text-[11px] text-slate-500">online · Financeiro</span>
               </div>
-              <p className="text-[11px] text-slate-500">online · {activeConversation.department} · {activeConversation.currentTicketId}</p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => alert('Conversa devolvida ao agent!')}
+              className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <ArrowLeftRight size={14} className="text-slate-500" />
+              Devolver ao agent
+            </button>
+            <button
+              onClick={() => alert('Atendimento encerrado!')}
+              className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 rounded-md transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <XCircle size={14} className="text-red-500" />
+              Encerrar atendimento
+            </button>
           </div>
         </div>
 
-        {/* Histórico de Chat */}
+        {/* Histórico de Chat com Intervenção do Analista */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/40">
-          <div className="text-center my-2">
-            <span className="text-[11px] bg-slate-200/60 text-slate-600 px-2 py-0.5 rounded-full">Hoje</span>
-          </div>
-
-          <div className="flex justify-end">
-            <div className="bg-slate-900 text-white text-xs rounded-lg px-3.5 py-2.5 max-w-md">
-              Qual o status do meu chamado? <span className="text-[10px] text-slate-400 ml-2">10:01</span>
-            </div>
-          </div>
-
           <div className="space-y-1">
             <p className="text-[11px] text-slate-400 font-medium">Nexo Assist <span className="text-blue-600 font-bold">IA</span></p>
             <div className="bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-3 max-w-md shadow-sm">
@@ -116,60 +114,53 @@ export default function AnalistaPage() {
             </div>
           </div>
 
-          <div className="space-y-1">
-            <p className="text-[11px] text-slate-400 font-medium">Nexo Assist <span className="text-blue-600 font-bold">IA</span></p>
-            <div className="bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-3 max-w-md shadow-sm">
-              Encaminhei para o Suporte N2. Um analista vai falar com você em até 2 h úteis. <span className="text-[10px] text-slate-400 ml-2">10:05</span>
-            </div>
-          </div>
-
-          <div className="text-center my-3">
-            <span className="text-[11px] text-slate-500 bg-slate-200/50 px-3 py-1 rounded-full border border-slate-200">
+          {/* Avisos de sistema de transição */}
+          <div className="text-center my-3 space-y-1">
+            <span className="block text-[11px] text-slate-500 bg-slate-200/50 px-3 py-1 rounded-full border border-slate-200 w-fit mx-auto">
               🔄 Transferida para Suporte N2 · 10:05
             </span>
+            <span className="block text-[11px] text-slate-500 bg-slate-200/50 px-3 py-1 rounded-full border border-slate-200 w-fit mx-auto">
+              🔒 Rafael Lima assumiu · agent pausado · 10:12
+            </span>
+          </div>
+
+          {/* Mensagem do Analista Humano */}
+          <div className="space-y-1">
+            <p className="text-[11px] text-emerald-700 font-semibold">Rafael Lima <span className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.2 rounded font-normal">Suporte N2</span></p>
+            <div className="bg-emerald-50 border border-emerald-200 text-slate-900 text-xs rounded-lg p-3.5 max-w-lg shadow-sm">
+              Oi, Ana! Aqui é o Rafael. Já li o histórico e vou verificar o driver de vídeo remotamente. Pode deixar o notebook ligado agora? <span className="text-[10px] text-slate-400 ml-2">10:12</span>
+            </div>
+          </div>
+
+          {/* Resposta do Usuário */}
+          <div className="flex justify-end">
+            <div className="bg-slate-900 text-white text-xs rounded-lg px-3.5 py-2.5 max-w-md">
+              Posso sim, está ligado. <span className="text-[10px] text-slate-400 ml-2">10:13</span>
+            </div>
           </div>
         </div>
 
-        {/* Barra de Controle Inferior do Analista (Assumir Atendimento) */}
-        <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
-              ✋
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-800">{activeConversation.clientName} espera um atendente</p>
-              <p className="text-[10px] text-slate-500">Agent pausado · até 12:05</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+        {/* Input Ativo do Analista */}
+        <div className="p-4 bg-white border-t border-slate-200">
+          <form onSubmit={handleSendAnalystMessage} className="relative">
+            <input
+              type="text"
+              value={analystMessage}
+              onChange={(e) => setAnalystMessage(e.target.value)}
+              placeholder="Ótimo! Vou iniciar o acesso remoto, é só aceitar o pedido que vai aparecer na tela..."
+              className="w-full pl-4 pr-12 py-2.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-blue-600 bg-white text-slate-800"
+            />
             <button
-              onClick={() => setIsAgentPaused(!isAgentPaused)}
-              className="px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+              type="submit"
+              className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-md transition-colors flex items-center justify-center shadow-sm"
             >
-              Devolver ao agent
+              <Send size={14} />
             </button>
-            <button
-              onClick={() => alert('Atendimento assumido pelo analista!')}
-              className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors shadow-sm flex items-center gap-1.5"
-            >
-              <HeadsetIcon size={14} />
-              Assumir atendimento
-            </button>
-          </div>
-        </div>
-
-        {/* Input do Analista */}
-        <div className="px-4 pb-4 bg-white">
-          <input
-            type="text"
-            placeholder="Assuma o atendimento para responder"
-            disabled={isAgentPaused}
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-slate-50 text-slate-400 focus:outline-none"
-          />
+          </form>
         </div>
       </div>
 
-      {/* 3. Painel Lateral Direito (Chamados da Ana) */}
+      {/* 3. Painel Lateral Direito com Status Atualizado */}
       <AnalystRightPanel clientName={activeConversation.clientName} />
     </div>
   );

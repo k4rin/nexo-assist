@@ -1,0 +1,139 @@
+
+generator client {
+  provider = "prisma-client"
+    output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum EmployeeRole {
+  EMPLOYEE
+  ANALYST
+}
+
+enum TicketType {
+  INCIDENT
+  REQUEST
+}
+
+enum TicketCategory {
+  ACCESS
+  NETWORK_VPN
+  HARDWARE
+  SOFTWARE
+  EMAIL
+  OTHER
+}
+
+enum TicketPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ANALYST
+  APPROVED
+  RESOLVED
+  CLOSED
+}
+
+enum ConversationStatus {
+  AGENT
+  WAITING_ANALYST
+  ANALYST
+  CLOSED
+}
+
+enum MessageSender {
+  EMPLOYEE
+  AGENT
+  ANALYST
+  SYSTEM
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  role         EmployeeRole @default(EMPLOYEE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tickets      Ticket[]
+  conversations Conversation[]
+  messages     Message[]
+}
+
+model Ticket {
+  id             String         @id @default(cuid())
+  code           String         @unique
+  title          String
+  description    String
+  type           TicketType
+  category       TicketCategory
+  priority       TicketPriority
+  status         TicketStatus   @default(OPEN)
+  affectedPerson String
+  employeeId     String
+  employee       Employee       @relation(fields: [employeeId], references: [id])
+  slaDeadline    DateTime?
+  lastUpdatedAt  DateTime       @default(now())
+  resolvedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  messages       Message[]
+}
+
+model Conversation {
+  id          String             @id @default(cuid())
+  employeeId  String
+  employee    Employee           @relation(fields: [employeeId], references: [id])
+  status      ConversationStatus @default(AGENT)
+  messageCount Int               @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  messages    Message[]
+  logs        AgentLog[]
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  content        String
+  sender         MessageSender
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+  employeeId     String?
+  employee       Employee?     @relation(fields: [employeeId], references: [id])
+  ticketId       String?
+  ticket         Ticket?       @relation(fields: [ticketId], references: [id])
+  createdAt      DateTime      @default(now())
+}
+
+model Article {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  category  TicketCategory
+  tags      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AgentLog {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  understanding String
+  action         String
+  confidence     Float
+  reason         String
+  createdAt      DateTime     @default(now())
+}
