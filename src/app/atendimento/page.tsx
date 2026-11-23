@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/chat/Sidebar';
 import { Header } from '@/components/chat/Header';
 import { UserMessage } from '@/components/chat/UserMessage';
@@ -9,11 +10,49 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import { Message, UserProfile, TicketItem } from '@/types/chat';
 
 export default function AtendimentoPage() {
-  const currentUser: UserProfile = {
-    name: 'Ana Souza',
-    email: 'ana.souza@nexo.com.br',
-    avatarInitials: 'AS',
-  };
+  const router = useRouter();
+
+const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+useEffect(() => {
+  async function checkSession() {
+    try {
+      const response = await fetch('/api/auth/me');
+
+      if (!response.ok) {
+        router.replace('/');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.user.role !== 'EMPLOYEE') {
+        router.replace('/analista');
+        return;
+      }
+
+      setCurrentUser({
+        name: data.user.name,
+        email: data.user.email,
+        avatarInitials: data.user.name
+          .split(' ')
+          .map((part: string) => part[0])
+          .slice(0, 2)
+          .join('')
+          .toUpperCase(),
+      });
+    } catch (error) {
+      console.error('Erro ao verificar sessão:', error);
+      router.replace('/');
+    } finally {
+      setIsCheckingSession(false);
+    }
+  }
+
+  checkSession();
+}, [router]);
+  
 
   // Mock dos chamados abertos da Ana Souza (Anexo B)
   const userTicketsMock: TicketItem[] = [
@@ -92,6 +131,14 @@ export default function AtendimentoPage() {
     };
     setMessages((prev) => [...prev, newMessage]);
   };
+  
+  if (isCheckingSession || !currentUser) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-slate-50">
+      <p className="text-slate-500">Verificando sua sessão...</p>
+    </div>
+  );
+}
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans antialiased overflow-hidden">

@@ -1,21 +1,55 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("ana.souza@nexo.com.br");
-  const [password, setPassword] = useState("Nexo@12345");
+  const [email, setEmail] = useState("funcionario@nexo.test");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const router = useRouter();
 
-    // Por enquanto, apenas validamos os campos visualmente.
-    // A autenticação será conectada ao backend posteriormente.
-    console.log({ email, password, rememberMe });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  setError("");
+  setIsLoading(true);
+
+  try {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.error || "Não foi possível realizar o login.");
+      return;
+    }
+
+    if (data.user.role === "ANALYST") {
+      router.push("/analista");
+    } else {
+      router.push("/atendimento");
+    }
+  } catch {
+    setError("Erro de conexão. Tente novamente.");
+  } finally {
+    setIsLoading(false);
   }
-
+}
   return (
     <main className="login-page">
       {/* PAINEL ESQUERDO */}

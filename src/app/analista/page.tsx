@@ -1,12 +1,44 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ConversationsSidebar } from '@/components/analyst/ConversationSidebar';
 import { AnalystRightPanel } from '@/components/analyst/AnalystRightPanel';
-import { Send, ArrowLeftRight, XCircle } from 'lucide-react';
+import { Send, ArrowLeftRight, XCircle, LogOut } from 'lucide-react';
 import { AnalystConversation } from '@/types/analyst';
 
 export default function AnalistaPage() {
+  const router = useRouter();
+
+const [isCheckingSession, setIsCheckingSession] = useState(true);
+const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+useEffect(() => {
+  async function checkSession() {
+    try {
+      const response = await fetch('/api/auth/me');
+
+      if (!response.ok) {
+        router.replace('/');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.user.role !== 'ANALYST') {
+        router.replace('/atendimento');
+        return;
+      }
+    } catch (error) {
+      console.error('Erro ao verificar sessão:', error);
+      router.replace('/');
+    } finally {
+      setIsCheckingSession(false);
+    }
+  }
+
+  checkSession();
+}, [router]);
   const mockConversations: AnalystConversation[] = [
     {
       id: '1',
@@ -43,6 +75,37 @@ export default function AnalistaPage() {
     alert(`Mensagem enviada pelo analista: "${analystMessage}"`);
     setAnalystMessage('');
   };
+
+  if (isCheckingSession) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-slate-100">
+      <p className="text-slate-500">
+        Verificando sua sessão...
+      </p>
+    </div>
+  );
+}
+
+async function handleLogout() {
+  try {
+    setIsLoggingOut(true);
+
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('Não foi possível encerrar a sessão.');
+    }
+
+    router.replace('/');
+    router.refresh();
+  } catch (error) {
+    console.error('Erro ao sair:', error);
+    setIsLoggingOut(false);
+    alert('Não foi possível sair. Tente novamente.');
+  }
+}
 
   return (
     <div className="flex h-screen bg-slate-100 font-sans antialiased overflow-hidden">
@@ -83,6 +146,16 @@ export default function AnalistaPage() {
               <XCircle size={14} className="text-red-500" />
               Encerrar atendimento
             </button>
+
+            <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            >
+           <LogOut size={14} />
+           {isLoggingOut ? 'Saindo...' : 'Sair'}
+          </button>
           </div>
         </div>
 
