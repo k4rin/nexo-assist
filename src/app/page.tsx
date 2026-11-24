@@ -131,6 +131,12 @@ export default function LoginPage() {
             Use seu e-mail corporativo e a senha da rede Nexa.
           </p>
 
+          {error && (
+          <p role="alert" className="login-error">
+            {error}
+          </p>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="form-field">
               <label htmlFor="email">E-mail corporativo</label>
@@ -189,10 +195,16 @@ export default function LoginPage() {
               <span>Manter conectado neste computador</span>
             </label>
 
-            <button type="submit" className="login-button">
-              Entrar <span>→</span>
-            </button>
-          </form>
+            <button
+                type="submit"
+                className="login-button"
+                disabled={isLoading}
+              >
+                {isLoading ? "Entrando..." : "Entrar"}
+                {!isLoading && <span>→</span>}
+              </button>
+
+           </form>
 
           <div className="form-divider" />
         </div>
